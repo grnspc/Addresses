@@ -214,11 +214,10 @@ class Address extends Model
 
 		$two[] = $this->city ? "{$this->city}," : '';
 		$two[] = $this->province ?: '';
-
-		$three[] = $this->post_code ?: '';
+		$two[] = $this->post_code ?: '';
 
 		$address[] = implode(', ', array_filter($one));
-		$address[] = implode(', ', array_filter($two));
+		$address[] = implode(' ', array_filter($two));
 		$address[] = $this->country_name ?: '';
 
 		if (count($address = array_filter($address)) > 0) {
