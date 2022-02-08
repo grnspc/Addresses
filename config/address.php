@@ -1,13 +1,9 @@
 <?php
 
 return [
-	'tables' => [
-		'addresses' => 'addresses',
-	],
+	'table' => 'addresses',
 
-	'models' => [
-		'address' => Grnspc\Addresses\Models\Address::class,
-	],
+	'model' => Grnspc\Addresses\Address::class,
 
 	'flags' => ['primary', 'billing', 'shipping'],
 

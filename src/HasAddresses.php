@@ -1,80 +1,59 @@
 <?php
 
-namespace Grnspc\Addresses\Traits;
+namespace Grnspc\Addresses;
 
 use Illuminate\Support\Str;
 use Illuminate\Support\Collection;
-use Grnspc\Addresses\AddressRegistrar;
-use Grnspc\Addresses\Contracts\Address;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Grnspc\Addresses\Exceptions\FailedValidationException;
 
 trait HasAddresses
 {
-	/** @var string */
-	private $addressClass;
+	protected array $queuedAddress = [];
 
-	/**
-	 * Boot the addressable trait for the model.
-	 *
-	 * @return void
-	 */
-	public static function bootAddressable()
+	public static function bootHasAddresses()
 	{
-		static::deleted(function (self $model) {
-			$model->addresses()->delete();
+        static::created(function (Model $taggableModel) {
+            if (count($taggableModel->queuedAddress) === 0) {
+                return;
+            }
+
+            $taggableModel->attachTags($taggableModel->queuedAddress);
+
+            $taggableModel->queuedAddress = [];
+        });
+
+		static::deleted(function (Model $deletedModel) {
+			$deletedModel->flushAddresses();
 		});
 	}
 
-	public function getAddressClass(): Address
+	public static function getAddressClassName(): string
 	{
-		if (!isset($this->addressClass)) {
-			$this->addressClass = app(AddressRegistrar::class)->getAddressClass();
-		}
-
-		return $this->addressClass;
+		return config('address.model', Address::class);
 	}
 
-	/**
-	 * Get all attached addresses to the model.
-	 *
-	 * @return \Illuminate\Database\Eloquent\Relations\MorphMany
-	 */
 	public function addresses(): MorphMany
 	{
-		return $this->morphMany(config('grnspc.addresses.model'), 'addressable', 'addressable_type', 'addressable_id');
+		return $this->morphMany(self::getAddressClassName(), 'addressable');
 	}
 
-	/**
-	 * Add an address to this model.
-	 *
-	 * @param  array  $attributes
-	 * @return mixed
-	 * @throws Exception
-	 */
 	public function storeAddress(array $attributes)
 	{
-		// $model = $this->getModel();
+		if (!$this->exists) {
+            $this->queuedAddresses = $attributes;
 
-		// if (!$model->exists) {
-		// 	return;
-		// }
+		    return;
+		}
 
 		$attributes = $this->loadAddressAttributes($attributes);
 
 		return $this->addresses()->updateOrCreate($attributes);
 	}
 
-	/**
-	 * Updates the given address.
-	 *
-	 * @param  Address|int  $address
-	 * @param  array    $attributes
-	 * @return bool
-	 * @throws Exception
-	 */
-	public function updateAddress(Address|int $address, array $attributes): bool
+	public function updateAddress(int | Address $address, array $attributes): bool
 	{
 		$address = $this->getStoredAddress($address);
 		if (!$address instanceof Address) {
@@ -86,13 +65,6 @@ trait HasAddresses
 		return $address->update($attributes);
 	}
 
-	/**
-	 * Deletes given address.
-	 *
-	 * @param  Address  $address
-	 * @return bool
-	 * @throws Exception
-	 */
 	public function destroyAddress(Address $address): bool
 	{
 		return $this->addresses()
@@ -100,22 +72,11 @@ trait HasAddresses
 			->delete();
 	}
 
-	/**
-	 * Deletes all the addresses of this model.
-	 *
-	 * @return bool
-	 */
 	public function flushAddresses(): bool
 	{
 		return $this->addresses()->delete();
 	}
 
-	/**
-	 * Get the primary address.
-	 *
-	 * @param  string  $direction
-	 * @return Address|null
-	 */
 	public function getAddress(string $flag = 'is_primary', string $direction = 'desc'): ?Address
 	{
 		$flag = Str::startsWith($flag, 'is_') ? $flag : "is_{$flag}";
@@ -123,24 +84,19 @@ trait HasAddresses
 		$addresses = $this->addresses;
 
 		if (
-			$this->addresses->count() === 1 ||
+			$addresses->count() === 1 ||
 			!array_key_exists($flag, config('address.flags', [])) ||
-			$this->addresses->where($flag, true)->count() === 0
+			$addresses->where($flag, true)->count() === 0
 		) {
-			return $this->addresses->first();
+			return $addresses->first();
 		}
 
-		return $this->addresses
+		return $addresses
 			// ->Flag($flag)
 			->orderBy($flag, $direction)
 			->first();
 	}
 
-	/**
-	 * Check if model has addresses.
-	 *
-	 * @return bool
-	 */
 	public function hasAddresses(): bool
 	{
 		return (bool) count($this->addresses);
@@ -148,10 +104,10 @@ trait HasAddresses
 
 	protected function getStoredAddress($address): Address
 	{
-		$addressClass = $this->getAddressClass();
+		$addressClass = self::getAddressClassName();
 
 		if (is_numeric($address)) {
-			return $addressClass->find($address);
+			return $addressClass::find($address);
 		}
 
 		return $address;
@@ -188,7 +144,7 @@ trait HasAddresses
 	 */
 	function validateAddress(array $attributes): Validator
 	{
-		$rules = $this->getAddressClass()->getValidationRules();
+		$rules = self::getAddressClassName()::getValidationRules();
 
 		return validator($attributes, $rules);
 	}

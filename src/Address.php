@@ -1,23 +1,21 @@
 <?php
 
-namespace Grnspc\Addresses\Models;
+namespace Grnspc\Addresses;
 
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
-use Grnspc\Addresses\Traits\GeoDistanceTrait;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use Grnspc\Addresses\Contracts\Address as AddressContract;
 
-class Address extends Model implements AddressContract
+class Address extends Model
 {
 	use GeoDistanceTrait;
 	use SoftDeletes;
 
 	public const FLAGS = ['primary', 'billing', 'shipping'];
 
-	protected $guarded = ['uuid'];
+	protected $guarded = ['id', 'uuid'];
 
 	/** @inheritdoc */
 	protected $casts = [
@@ -53,7 +51,7 @@ class Address extends Model implements AddressContract
 
 	public function getTable()
 	{
-		return config('address.tables.addresses', parent::getTable());
+		return config('address.table', parent::getTable());
 	}
 
 	/** @inheritdoc */
@@ -153,7 +151,7 @@ class Address extends Model implements AddressContract
 
 	public function geocode(): self
 	{
-		$geocoding_api_key = config('grnspc.addresses.geocoding.api_key');
+		$geocoding_api_key = config('address.geocoding.api_key');
 
 		if (!($query = $this->getQueryString()) && !$geocoding_api_key) {
 			return $this;

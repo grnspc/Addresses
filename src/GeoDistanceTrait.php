@@ -1,6 +1,6 @@
 <?php
 
-namespace Grnspc\Addresses\Traits;
+namespace Grnspc\Addresses;
 
 use DB;
 use Jackpopp\GeoDistance\InvalidMeasurementException;
