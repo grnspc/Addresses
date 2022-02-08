@@ -57,8 +57,6 @@ class Address extends Model
 	{
 		$this->setTable(config('address.table'), parent::getTable());
 
-		$this->mergeRules(self::getValidationRules());
-
 		$this->guarded[] = $this->primaryKey;
 
 		parent::__construct($attributes);
