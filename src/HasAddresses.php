@@ -50,7 +50,7 @@ trait HasAddresses
 
 		$attributes = $this->loadAddressAttributes($attributes);
 
-		return $this->addresses()->updateOrCreate($attributes);
+		return $this->addresses()->updateOrCreate(['id' => $attributes['id']], $attributes);
 	}
 
 	public function updateAddress(int | Address $address, array $attributes): bool
