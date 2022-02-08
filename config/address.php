@@ -16,7 +16,7 @@ return [
 		'street_extra' => ['nullable', 'string', 'max:255'],
 		'city' => ['required', 'string', 'max:150'],
 		'province' => ['required', 'string', 'max:150'],
-		'post_code' => ['required', 'string', 'max:150'],
+		'post_code' => ['nullable', 'string', 'max:150'],
 		'country_code' => ['required', 'alpha', 'size:2', 'country'],
 		'latitude' => ['nullable', 'numeric'],
 		'longitude' => ['nullable', 'numeric'],

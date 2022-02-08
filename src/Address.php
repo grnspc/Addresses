@@ -37,6 +37,17 @@ class Address extends Model
 		'deleted_at' => 'datetime',
 	];
 
+	/** @inheritdoc */
+	protected $observables = ['validating', 'validated'];
+
+	/**
+	 * Whether the model should throw a
+	 * ValidationException if it fails validation.
+	 *
+	 * @var bool
+	 */
+	protected $throwValidationExceptions = true;
+
 	/**
 	 * Create a new Eloquent model instance.
 	 *
@@ -44,14 +55,13 @@ class Address extends Model
 	 */
 	public function __construct(array $attributes = [])
 	{
-		parent::__construct($attributes);
+		$this->setTable(config('address.table'), parent::getTable());
+
+		$this->mergeRules(self::getValidationRules());
 
 		$this->guarded[] = $this->primaryKey;
-	}
 
-	public function getTable()
-	{
-		return config('address.table', parent::getTable());
+		parent::__construct($attributes);
 	}
 
 	/** @inheritdoc */
@@ -91,14 +101,14 @@ class Address extends Model
 			'street_extra' => ['nullable', 'string', 'max:255'],
 			'city' => ['required', 'string', 'max:150'],
 			'province' => ['required', 'string', 'max:150'],
-			'post_code' => ['required', 'string', 'max:150'],
+			'post_code' => ['nullable', 'string', 'max:150'],
 			'country_code' => ['required', 'alpha', 'size:2', 'country'],
 			'latitude' => ['nullable', 'numeric'],
 			'longitude' => ['nullable', 'numeric'],
 		]);
 
 		foreach (config('address.flags', self::FLAGS) as $flag) {
-			$rules['is_' . $flag] = ['boolean'];
+			$rules['is_' . $flag] = ['sometimes', 'boolean'];
 		}
 
 		return $rules;
@@ -153,20 +163,18 @@ class Address extends Model
 	{
 		$geocoding_api_key = config('address.geocoding.api_key');
 
-		if (!($query = $this->getQueryString()) && !$geocoding_api_key) {
+		if (!($query = $this->getQueryString()) || !$geocoding_api_key) {
 			return $this;
 		}
 
-		$url = "https://maps.google.com/maps/api/geocode/json?address={$query}&sensor=false&key={$geocoding_api_key}";
+		$geocode = json_decode(
+			file_get_contents("https://maps.google.com/maps/api/geocode/json?address={$query}&sensor=false&key={$geocoding_api_key}")
+		);
 
-		if ($geocode = file_get_contents($url)) {
-			$output = json_decode($geocode);
-
-			if (count($output->results) && isset($output->results[0])) {
-				if ($geo = $output->results[0]->geometry) {
-					$this->latitude = $geo->location->lat;
-					$this->longitude = $geo->location->lng;
-				}
+		if (count($geocode->results) && isset($geocode->results[0])) {
+			if ($geo = $geocode->results[0]->geometry) {
+				$this->latitude = $geo->location->lat;
+				$this->longitude = $geo->location->lng;
 			}
 		}
 
@@ -235,6 +243,21 @@ class Address extends Model
 			}
 
 			return '<address>' . implode('<br />', array_filter($address)) . '</address>';
+		}
+
+		return '';
+	}
+
+    /**
+	 * Get the address as a simple line.
+	 *
+	 * @param  string  $glue
+	 * @return string
+	 */
+	public function getStreetLine(): string
+	{
+		if ($address = $this->getArray()) {
+			return $address[0];
 		}
 
 		return '';
