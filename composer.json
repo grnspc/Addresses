@@ -1,23 +1,30 @@
 {
 	"name": "grnspc/addresses",
 	"description": "Laravel Addressable is a polymorphic Laravel package, for addressbook management. You can add addresses to any eloquent model with ease.",
+	"keywords": [
+		"laravel",
+		"addresses",
+		"addressable"
+	],
 	"type": "library",
 	"license": "MIT",
 	"authors": [
 		{
 			"name": "Nathan Robinson",
-			"email": "grnspc.dev@gmail.com"
+			"email": "grnspc.dev@gmail.com",
+			"role": "Developer"
 		}
 	],
 	"require": {
-		"php": "^8.0",
-		"laravel/framework": "^8.67|^9.0",
-		"spatie/laravel-package-tools": "^1.4",
+		"php": "^7.4|^8.0",
+		"laravel/framework": "^8.70 | ^9.0",
+		"spatie/laravel-package-tools": "^1.11",
 		"rinvex/countries": "^8.1"
 	},
 	"require-dev": {
-		"orchestra/testbench": "^6.13|^7.0",
-		"phpunit/phpunit": "^9.5.2"
+		"mockery/mockery": "^1.5",
+		"orchestra/testbench": "^7.0",
+		"phpunit/phpunit": "^9.5"
 	},
 	"autoload": {
 		"psr-4": {
@@ -30,10 +37,8 @@
 		}
 	},
 	"scripts": {
-		"test": "vendor/bin/phpunit"
-	},
-	"config": {
-		"sort-packages": true
+		"test": "vendor/bin/phpunit",
+		"test:dox": "phpunit --testdox"
 	},
 	"extra": {
 		"laravel": {
@@ -41,6 +46,11 @@
 				"Grnspc\\Addresses\\AddressesServiceProvider"
 			]
 		}
+	},
+	"config": {
+		"optimize-autoloader": true,
+		"preferred-install": "dist",
+		"sort-packages": true
 	},
 	"minimum-stability": "dev",
 	"prefer-stable": true

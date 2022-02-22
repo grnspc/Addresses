@@ -6,8 +6,8 @@ use Illuminate\Support\Str;
 use Illuminate\Support\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Contracts\Validation\Validator;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
-use Grnspc\Addresses\Exceptions\FailedValidationException;
 
 trait HasAddresses
 {
@@ -50,7 +50,7 @@ trait HasAddresses
 
 		$attributes = $this->loadAddressAttributes($attributes);
 
-		return $this->addresses()->updateOrCreate(['id' => $attributes['id']], $attributes);
+		return $this->addresses()->updateOrCreate(['id' => $attributes['id'] ?? null], $attributes);
 	}
 
 	public function updateAddress(int | Address $address, array $attributes): bool
@@ -129,7 +129,7 @@ trait HasAddresses
 			$errors = $validator->errors()->all();
 			$error = '[Addresses] ' . implode(' ', $errors);
 
-			throw new FailedValidationException($error);
+			throw new ValidationException($error);
 		}
 
 		// return attributes array with country_id key/value pair

@@ -192,7 +192,7 @@ class Address extends Model
 		//  $query[] = $this->line_2                        ?: '';
 		$query[] = $this->city ?: '';
 		$query[] = $this->province ?: '';
-		$query[] = $this->postal_code ?: '';
+		$query[] = $this->post_code ?: '';
 		$query[] = country($this->country_code)->getName() ?: '';
 
 		$query = trim(implode(',', array_filter($query)));
